@@ -2,7 +2,7 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
 
-exports.generateJWT = (userID) => {
+exports.createLoginToken = (userID) => {
     return jwt.sign({ userID }, JWT_SECRET, { expiresIn: '24h' });
 };
 
@@ -18,9 +18,11 @@ exports.decodeJWT = (token) => {
     return jwt.verify(token, JWT_SECRET);
 };
 
-exports.getTokenFromAuthHeader = (authHeader) => {
+exports.getTokenFromRequest = (authHeader, reqParamsToken) => {
     if (authHeader) {
         return authHeader.split(' ')[1];
+    } else if (reqParamsToken) {
+        return reqParamsToken;
     } else {
         return undefined;
     }
