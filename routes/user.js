@@ -5,6 +5,7 @@ const admin = require('../helpers/checkAdminStatus');
 const jwt = require('../helpers/jwt');
 const mail = require('../helpers/sendMail');
 const User = require('../database/models/user');
+const middleware = require('../helpers/middleware');
 
 // CREATE NEW USER
 router.post("/create", async (req, res) => {
@@ -32,68 +33,30 @@ router.post("/create", async (req, res) => {
 });
 
 // ACTIVATE USER
-router.get("/activate/:token", async (req, res) => {
-    const { token } = req.params;
-    try {
-        const decodedToken = jwt.decodeJWT(token);
-        User.findOneAndUpdate({ _id: decodedToken.userID }, { activated: true }, (err, user) => {
-            if (err) {
-                return res.status(403).json({
-                    message: "Activation failed",
-                    error: err
-                });
-            }
-            // USER FOUND
-            if (user) {
-                const userIsActivated = user.activated;
-                // IF USER IS NOT ACTIVATED
-                if (!userIsActivated) {
-                    return res.status(200).json({
-                        message: "Account activated successfully"
-                    });
-                }
-                // IF USER IS ALREADY ACTIVATED
-                return res.status(200).json({
-                    message: "Account already activated"
-                });
-            } else {
-                return res.status(404).json({
-                    message: "No user found",
-                });
-            }
-        });
-    // IF TOKEN IS INVALID
-    } catch(err) {
-        return res.status(403).json({
-            message: "Activation failed",
-            error: err
+router.get("/activate/:token", middleware.verifyToken, async (req, res) => {
+    const user = req.user;
+    const userIsActivated = user.activated;
+    // IF USER IS NOT ACTIVATED
+    if (!userIsActivated) {
+        await User.findByIdAndUpdate(user._id, { activated: true });
+        return res.status(200).json({
+            message: "Account activated successfully"
         });
     }
+    // IF USER IS ALREADY ACTIVATED
+    return res.status(200).json({
+        message: "Account already activated"
+    });
 });
 
 // RESEND ACTIVATION LINK
-router.post("/resend-activation-link", async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email: email });
-    // NO USER FOUND IN DATABASE
-    if (!user) {
-        return res.status(401).json({
-            message: "Invalid credentials"
-        });
-    }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    // PASSWORD IS INVALID
-    if (!isPasswordValid) {
-        return res.status(401).json({
-            message: "Invalid credentials"
-        });
-    }
+router.post("/resend-activation-link", middleware.getUser, async (req, res) => {
+    const user = req.user;
     const userIsActivated = user.activated;
     // USER IS NOT ACTIVATED
     if (!userIsActivated) {
         const activationToken = jwt.createActivationToken(user._id);
-        mail.sendAccountActivationMail(email, activationToken);
-
+        mail.sendAccountActivationMail(user.email, activationToken);
         return res.status(200).json({
             message: "Account activation mail send successfully"
         });
@@ -105,33 +68,12 @@ router.post("/resend-activation-link", async (req, res) => {
 });
 
 // LOGIN WITH EXISTING USER
-router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email: email });
-    // NO USER FOUND IN DATABASE
-    if (!user) {
-        return res.status(401).json({
-            message: "Invalid credentials"
-        });
-    }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    // PASSWORD IS INVALID
-    if (!isPasswordValid) {
-        return res.status(401).json({
-            message: "Invalid credentials"
-        });
-    }
-    const userIsActivated = user.activated;
-    // USER IS NOT ACTIVATED
-    if (!userIsActivated) {
-        return res.status(403).json({
-            message: "Your account is not activated. Please check your email for activation link."
-        });
-    }
-    // CREATE JWT
-    const token = jwt.generateJWT(user._id);
+router.post("/login", middleware.getUser, middleware.checkActivationStatus, async (req, res) => {
+    const user = req.user;
+    // CREATE 
+    const token = jwt.createLoginToken(user._id);
     // SET LAST LOGIN DATE
-    await User.findOneAndUpdate({ _id: user._id }, { lastLogin: Date.now() }, { new: true }, (err, user) => {
+    User.findOneAndUpdate({ _id: user._id }, { lastLogin: Date.now() }, { new: true }, (err, user) => {
         if (err) {
             return res.status(403).json({
                 message: "Login failed",
@@ -153,46 +95,16 @@ router.post("/login", async (req, res) => {
 });
 
 // GET USER VIA TOKEN
-router.get("/", async (req, res) => {
-    const token = jwt.getTokenFromAuthHeader(req.headers['authorization']);
-    // NO TOKEN PROVIDED
-    if (!token) {
-        return res.status(400).json({
-            message: "No token provided"
-        });
-    }
-    try {
-        const decodedToken = jwt.decodeJWT(token);
-        const user = await User.findById(decodedToken.userID);
-        // NO USER FOUND IN DATABASE
-        if (!user) {
-            return res.status(404).json({
-                message: "User does not exist"
-            });
+router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async (req, res) => {
+    return res.status(200).json({
+        message: "User found",
+        user: {
+            email: req.user.email,
+            admin: req.user.admin,
+            lastLogin: req.user.lastLogin.toString(),
+            createdAt: req.user.createdAt.toString()
         }
-        const userIsActivated = user.activated;
-        // USER IS NOT ACTIVATED
-        if (!userIsActivated) {
-            return res.status(403).json({
-                message: "Your account is not activated. Please check your email for activation link."
-            });
-        }
-        // USER FOUND IN DATABASE
-        return res.status(200).json({
-            message: "User found",
-            user: {
-                email: user.email,
-                admin: user.admin,
-                lastLogin: user.lastLogin.toString(),
-                createdAt: user.createdAt.toString()
-            }
-        });
-    } catch(err) {
-        // TOKEN IS INVALID
-        return res.status(401).json({
-            message: "Invalid token"
-        });
-    }
+    });
 });
 
 // FORGOT PASSWORD - SEND EMAIL WITH LINK TO RESET PASSWORD
@@ -214,68 +126,31 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 // RESET PASSWORD
-router.post("/reset-password/:token", async (req, res) => {
-    const { token } = req.params;
+router.post("/reset-password/:token", middleware.verifyToken, async (req, res) => {
     const { newPassword } = req.body;
-    try {
-        const decodedToken = jwt.decodeJWT(token);
-        User.findOneAndUpdate({ _id: decodedToken.userID }, { password: bcrypt.hashSync(newPassword, 10) }, (err, user) => {
-            if (err) {
-                return res.status(403).json({
-                    message: "Password reset failed",
-                    error: err
-                });
-            }
-            // USER FOUND
-            if (user) {
-                return res.status(200).json({
-                    message: "Password reset successfully"
-                });
-            } else {
-                return res.status(404).json({
-                    message: "No user found",
-                });
-            }
+    const user = req.user;
+    User.findOneAndUpdate({ _id: user._id }, { password: bcrypt.hashSync(newPassword, 10) }, (err, user) => {
+        if (err) {
+            return res.status(403).json({
+                message: "Password reset failed",
+                error: err
+            });
+        }
+        // SUCCESSFULLY RESET PASSWORD
+        return res.status(200).json({
+            message: "Password reset successfully"
         });
-    // IF TOKEN IS INVALID
-    } catch(err) {
-        return res.status(403).json({
-            message: "Password reset failed",
-            error: err
-        });
-    }
+    });
 });
 
 // DELETE USER
-router.delete("/", async (req, res) => {
-    const token = jwt.getTokenFromAuthHeader(req.headers['authorization']);
-    // NO TOKEN PROVIDED
-    if (!token) {
-        return res.status(400).json({
-            message: "No token provided"
-        });
-    }
-    try {
-        const decodedToken = jwt.decodeJWT(token);
-        const user = await User.findById(decodedToken.userID);
-        // NO USER FOUND IN DATABASE
-        if (!user) {
-            return res.status(404).json({
-                message: "User does not exist"
-            });
-        }
-        // DELETE USER OUT OF DATABASE
-        await User.findByIdAndDelete(decodedToken.userID);
-        return res.status(200).json({
-            message: "User deleted successfully"
-        });
-    } catch (err) {
-        // TOKEN IS INVALID
-        return res.status(401).json({
-            message: "Invalid token",
-            error: err
-        });
-    }  
+router.delete("/", middleware.verifyToken, async (req, res) => {
+    const user = req.user;
+    // DELETE USER OUT OF DATABASE
+    await User.findByIdAndDelete(user._id);
+    return res.status(200).json({
+        message: "User deleted successfully"
+    });
 });
 
 module.exports = router;
