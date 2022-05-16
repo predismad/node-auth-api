@@ -23,7 +23,7 @@ exports.sendPasswordResetMail = async (to, resetToken) => {
 }
 
 exports.sendAccountActivationMail = async (to, activationToken) => {
-  const activationLink = `${process.env.FRONTEND_URL}/activate-account/${activationToken}`;
+  const activationLink = `${process.env.FRONTEND_URL}/api/user/activate/${activationToken}`;
   var email = {
     from: process.env.SENDGRID_EMAIL,
     to: to,
