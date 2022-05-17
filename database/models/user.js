@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const admin = require('../../helpers/checkAdminStatus');
+const bcrypt = require('bcrypt');
 
 const UserSchema = new Schema({
     email: {
         unique: true,
         type: String,
+        lowercase: true,
         required: true
     },
     password: {
@@ -13,11 +16,11 @@ const UserSchema = new Schema({
     },
     admin: {
         type: Boolean,
-        required: true,
+        default: false,
     },
     activated: {
         type: Boolean,
-        required: true,
+        default: false,
     },
     createdAt: {
         type: Date,
@@ -26,6 +29,16 @@ const UserSchema = new Schema({
     lastLogin: {
         type: Date
     }
+});
+
+// HASH PASSWORD AND CHECK IF USER IS AN ADMIN BEFORE SAVING TO DATABASE
+UserSchema.pre('save', async function (next) {
+    if (this.isNew) {
+        const hashedPassword = await bcrypt.hashSync(this.password, 10);
+        this.password = hashedPassword;
+        this.admin = admin.checkAdminStatus(this.email);
+    }
+    next();
 });
 
 const User = mongoose.model('User', UserSchema);
