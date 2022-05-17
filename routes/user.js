@@ -132,7 +132,10 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password/:token", middleware.verifyToken, async (req, res) => {
     const { newPassword } = req.body;
     const user = req.user;
-    User.findOneAndUpdate({ _id: user._id }, { password: bcrypt.hashSync(newPassword, 10) }, (err, user) => {
+    // HASH NEW PASSWORD
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // UPDATE USER PASSWORD
+    User.findOneAndUpdate({ _id: user._id }, { password: hashedPassword }, (err, user) => {
         if (err) {
             return res.status(403).json({
                 message: "Password reset failed",
