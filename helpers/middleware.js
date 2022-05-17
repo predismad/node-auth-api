@@ -1,6 +1,5 @@
 const jwt = require('../helpers/jwt');
 const User = require('../database/models/user');
-const bcrypt = require('bcrypt');
 
 // VERIFIES JWT AND RETURNS USER IF VALID
 exports.verifyToken = async (req, res, next) => {
@@ -41,8 +40,8 @@ exports.getUser = async (req, res, next) => {
             message: "Invalid credentials"
         });
     }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    // PASSWORD IS INVALID
+    const isPasswordValid = user.isPasswordValid(password, user.password);
+    // IF PASSWORD IS INVALID
     if (!isPasswordValid) {
         return res.status(401).json({
             message: "Invalid credentials"
