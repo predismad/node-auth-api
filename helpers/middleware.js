@@ -1,14 +1,13 @@
 const jwt = require('../helpers/jwt');
 const User = require('../database/Models/User.model');
-const status = require('./httpStatusCodes');
-const constants = require('./constants');
+const { messages, statusCodes } = require('./messages');
 
 // VERIFIES JWT AND RETURNS USER IF VALID
 exports.verifyToken = async (req, res, next) => {
     var token = jwt.getTokenFromRequest(req.headers['authorization'], req.params.token);
     if (!token) {
-        return res.status(status.BAD_REQUEST).json({
-            message: constants.NO_TOKEN_PROVIDED
+        return res.status(statusCodes.BAD_REQUEST).json({
+            message: messages.NO_TOKEN_PROVIDED
         });
     }
     try {
@@ -16,8 +15,8 @@ exports.verifyToken = async (req, res, next) => {
         const user = await User.findById(decodedToken.userID);
         // NO USER FOUND IN DATABASE
         if (!user) {
-            return res.status(status.NOT_FOUND).json({
-                message: constants.NO_USER
+            return res.status(statusCodes.NOT_FOUND).json({
+                message: messages.NO_USER
             });
         }
         // USER FOUND IN DATABASE
@@ -25,8 +24,8 @@ exports.verifyToken = async (req, res, next) => {
         next();
     } catch(err) {
         // TOKEN IS INVALID
-        return res.status(status.UNAUTHORIZED).json({
-            message: constants.INVALID_TOKEN,
+        return res.status(statusCodes.UNAUTHORIZED).json({
+            message: messages.INVALID_TOKEN,
             error: err
         });
     }
@@ -38,15 +37,15 @@ exports.getUser = async (req, res, next) => {
     const user = await User.findOne({ email: email });
     // NO USER FOUND IN DATABASE
     if (!user) {
-        return res.status(status.UNAUTHORIZED).json({
-            message: constants.INVALID_CREDENTIALS
+        return res.status(statusCodes.UNAUTHORIZED).json({
+            message: messages.INVALID_CREDENTIALS
         });
     }
     const isPasswordValid = user.isPasswordValid(password, user.password);
     // IF PASSWORD IS INVALID
     if (!isPasswordValid) {
-        return res.status(status.UNAUTHORIZED).json({
-            message: constants.INVALID_CREDENTIALS
+        return res.status(statusCodes.UNAUTHORIZED).json({
+            message: messages.INVALID_CREDENTIALS
         });
     }
     req.user = user;
@@ -58,8 +57,8 @@ exports.checkActivationStatus = async (req, res, next) => {
     const userIsActivated = req.user.activated;
     // USER IS NOT ACTIVATED
     if (!userIsActivated) {
-        return res.status(status.UNAUTHORIZED).json({
-            message: constants.USER_NOT_ACTIVATED
+        return res.status(statusCodes.UNAUTHORIZED).json({
+            message: messages.USER_NOT_ACTIVATED
         });
     }
     next();
@@ -70,8 +69,8 @@ exports.checkAdminStatus = async (req, res, next) => {
     const isAdmin = req.user.admin;
     // USER IS NOT ACTIVATED
     if (!isAdmin) {
-        return res.status(status.FORBIDDEN).json({
-            message: constants.ACCESS_DENIED
+        return res.status(statusCodes.FORBIDDEN).json({
+            message: messages.ACCESS_DENIED
         });
     }
     next();

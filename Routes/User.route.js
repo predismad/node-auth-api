@@ -6,7 +6,7 @@ const mail = require('../helpers/sendMail');
 const User = require('../database/Models/User.model');
 const middleware = require('../helpers/middleware');
 const status = require('../helpers/httpStatusCodes');
-const constants = require('../helpers/constants');
+const { messages, statusCodes } = require('../helpers/constants');
 
 // CREATE NEW USER
 router.post("/create", async (req, res) => {
@@ -17,15 +17,15 @@ router.post("/create", async (req, res) => {
     });
     newUser.save(async (err, user) => {
         if (err) {
-            return res.status(status.CONFLICT).json({
-                message: constants.EMAIL_ALREADY_EXISTS,
+            return res.status(statusCodes.CONFLICT).json({
+                message: messages.EMAIL_ALREADY_EXISTS,
                 error: err
             });
         }
         const activationToken = jwt.createActivationToken(user._id);
         await mail.sendAccountActivationMail(email, activationToken);
-        return res.status(status.CREATED).json({
-            message: constants.USER_CREATED
+        return res.status(statusCodes.CREATED).json({
+            message: messages.USER_CREATED
         });
     });
 });
@@ -37,13 +37,13 @@ router.get("/activate/:token", middleware.verifyToken, async (req, res) => {
     // IF USER IS NOT ACTIVATED
     if (!userIsActivated) {
         await User.findByIdAndUpdate(user._id, { activated: true });
-        return res.status(status.OK).json({
-            message: constants.USER_ACTIVATED
+        return res.status(statusCodes.OK).json({
+            message: messages.USER_ACTIVATED
         });
     }
     // IF USER IS ALREADY ACTIVATED
-    return res.status(status.OK).json({
-        message: constants.USER_ALREADY_ACTIVATED
+    return res.status(statusCodes.OK).json({
+        message: messages.USER_ALREADY_ACTIVATED
     });
 });
 
@@ -55,13 +55,13 @@ router.post("/resend-activation-link", middleware.getUser, async (req, res) => {
     if (!userIsActivated) {
         const activationToken = jwt.createActivationToken(user._id);
         mail.sendAccountActivationMail(user.email, activationToken);
-        return res.status(status.OK).json({
-            message: constants.ACTIVATION_MAIL_SEND
+        return res.status(statusCodes.OK).json({
+            message: messages.ACTIVATION_MAIL_SEND
         });
     }
     // USER IS ALREADY ACTIVATED
-    return res.status(status.OK).json({
-        message: constants.USER_ALREADY_ACTIVATED
+    return res.status(statusCodes.OK).json({
+        message: messages.USER_ALREADY_ACTIVATED
     });
 });
 
@@ -73,14 +73,14 @@ router.post("/login", middleware.getUser, middleware.checkActivationStatus, asyn
     // SET LAST LOGIN DATE
     User.findOneAndUpdate({ _id: user._id }, { lastLogin: Date.now() }, { new: true }, (err, user) => {
         if (err) {
-            return res.status(status.INTERNAL_SERVER_ERROR).json({
-                message: constants.LOGIN_FAILED,
+            return res.status(statusCodes.INTERNAL_SERVER_ERROR).json({
+                message: messages.LOGIN_FAILED,
                 error: err
             });
         }
          // RETURN TOKEN AND USER DATA
-        return res.status(status.OK).json({
-            message: constants.LOGIN_SUCCESSFUL,
+        return res.status(statusCodes.OK).json({
+            message: messages.LOGIN_SUCCESSFUL,
             token: token,
             user: {
                 email: user.email,
@@ -94,8 +94,8 @@ router.post("/login", middleware.getUser, middleware.checkActivationStatus, asyn
 
 // GET USER VIA TOKEN
 router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async (req, res) => {
-    return res.status(status.OK).json({
-        message: constants.USER_FOUND,
+    return res.status(statusCodes.OK).json({
+        message: messages.USER_FOUND,
         user: {
             email: req.user.email,
             admin: req.user.admin,
@@ -107,8 +107,8 @@ router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async 
 
 // EXAMPLE ROUTE FOR ADMINS ONLY
 router.get("/admin", middleware.verifyToken, middleware.checkActivationStatus, middleware.checkAdminStatus, async (req, res) => {
-    return res.status(status.OK).json({
-        message: constants.USER_IS_ADMIN
+    return res.status(statusCodes.OK).json({
+        message: messages.USER_IS_ADMIN
     });
 });
 
@@ -118,15 +118,15 @@ router.post("/forgot-password", async (req, res) => {
     const user = await User.findOne({ email: email });
     // NO USER FOUND IN DATABASE
     if (!user) {
-        return res.status(status.NOT_FOUND).json({
-            message: constants.NO_USER
+        return res.status(statusCodes.NOT_FOUND).json({
+            message: messages.NO_USER
         });
     }
     // send password reset link to user
     const resetToken = jwt.createResetToken(user._id);
     mail.sendPasswordResetMail(email, resetToken);
-    return res.status(status.OK).json({
-        message: constants.RESET_MAIL_SEND
+    return res.status(statusCodes.OK).json({
+        message: messages.RESET_MAIL_SEND
     });
 });
 
@@ -139,14 +139,14 @@ router.post("/reset-password/:token", middleware.verifyToken, async (req, res) =
     // UPDATE USER PASSWORD
     User.findOneAndUpdate({ _id: user._id }, { password: hashedPassword }, (err, user) => {
         if (err) {
-            return res.status(status.INTERNAL_SERVER_ERROR).json({
-                message: constants.RESET_FAILED,
+            return res.status(statusCodes.INTERNAL_SERVER_ERROR).json({
+                message: messages.RESET_FAILED,
                 error: err
             });
         }
         // SUCCESSFULLY RESET PASSWORD
-        return res.status(status.OK).json({
-            message: constants.RESET_SUCCESSFUL
+        return res.status(statusCodes.OK).json({
+            message: messages.RESET_SUCCESSFUL
         });
     });
 });
@@ -156,8 +156,8 @@ router.delete("/", middleware.verifyToken, async (req, res) => {
     const user = req.user;
     // DELETE USER OUT OF DATABASE
     await User.findByIdAndDelete(user._id);
-    return res.status(status.OK).json({
-        message: constants.USER_DELETED
+    return res.status(statusCodes.OK).json({
+        message: messages.USER_DELETED
     });
 });
 
