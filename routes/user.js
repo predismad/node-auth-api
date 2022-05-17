@@ -107,6 +107,13 @@ router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async 
     });
 });
 
+// EXAMPLE ROUTE FOR ADMINS ONLY
+router.get("/admin", middleware.verifyToken, middleware.checkActivationStatus, middleware.checkAdminStatus, async (req, res) => {
+    return res.status(200).json({
+        message: "You are an admin!"
+    });
+});
+
 // FORGOT PASSWORD - SEND EMAIL WITH LINK TO RESET PASSWORD
 router.post("/forgot-password", async (req, res) => {
     const { email } = req.body;
