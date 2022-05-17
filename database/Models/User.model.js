@@ -46,6 +46,7 @@ UserSchema.methods.isPasswordValid = (password, savedPassword) => {
     return bcrypt.compareSync(password, savedPassword);
 };
 
+// CHECK IF EMAIL OF USER IS LISTED IN ADMIN MAILS
 function checkAdminStatus(email) {
     const ADMIN_MAILS = process.env.ADMIN_MAILS.split(', ');
     return ADMIN_MAILS.includes(email.toLowerCase());
