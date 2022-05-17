@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const admin = require('../../helpers/checkAdminStatus');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 const UserSchema = new Schema({
     email: {
@@ -36,7 +36,7 @@ UserSchema.pre('save', async function (next) {
     if (this.isNew) {
         const hashedPassword = await bcrypt.hashSync(this.password, 10);
         this.password = hashedPassword;
-        this.admin = admin.checkAdminStatus(this.email);
+        this.admin = checkAdminStatus(this.email);
     }
     next();
 });
@@ -44,6 +44,11 @@ UserSchema.pre('save', async function (next) {
 // VALIDATE PASSWORD
 UserSchema.methods.isPasswordValid = (password, savedPassword) => {
     return bcrypt.compareSync(password, savedPassword);
+};
+
+function checkAdminStatus(email) {
+    const ADMIN_MAILS = process.env.ADMIN_MAILS.split(', ');
+    return ADMIN_MAILS.includes(email.toLowerCase());
 };
 
 const User = mongoose.model('User', UserSchema);
