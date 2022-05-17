@@ -8,7 +8,7 @@ Step 1: Clone the repo
 git clone https://github.com/predismad/node-auth-api.git
 ```
 
-Step 2: Go into project directory and install dependencies
+Step 2: CD into project directory and install dependencies
 ```bash
 npm install
 ````
