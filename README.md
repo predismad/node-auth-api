@@ -5,7 +5,7 @@ Node User Authorization API
 
 Step 1: Clone the repo
 ```bash
-git clone https://github.com/predismad/node-auth-api
+git clone https://github.com/predismad/node-auth-api.git
 ```
 
 Step 2: Go into project directory and install dependencies
