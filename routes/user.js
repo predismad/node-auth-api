@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const admin = require('../helpers/checkAdminStatus');
 const jwt = require('../helpers/jwt');
 const mail = require('../helpers/sendMail');
 const User = require('../database/models/user');
@@ -10,12 +9,9 @@ const middleware = require('../helpers/middleware');
 // CREATE NEW USER
 router.post("/create", async (req, res) => {
     const { email, password } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 10);
     const newUser = new User({
-        email: email.toLowerCase(),
-        password: hashedPassword ,
-        admin: admin.checkAdminStatus(email),
-        activated: false,
+        email: email,
+        password: password,
     });
     newUser.save(async (err, user) => {
         if (err) {
