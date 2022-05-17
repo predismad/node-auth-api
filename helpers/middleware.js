@@ -1,5 +1,5 @@
 const jwt = require('../helpers/jwt');
-const User = require('../database/Models/user');
+const User = require('../database/Models/User.model');
 
 // VERIFIES JWT AND RETURNS USER IF VALID
 exports.verifyToken = async (req, res, next) => {

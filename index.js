@@ -3,13 +3,13 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
-require('./database/dbconnection');
+require('./database/dbConnection');
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const userRoute = require('./routes/user');
+const userRoute = require('./Routes/User.route');
 
 app.use('/api/user', userRoute);
 
