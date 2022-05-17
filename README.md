@@ -20,7 +20,7 @@ touch .env
 
 Step 4: Generate secret key for JWT and copy to clipboard
 ```bash
-node ./helpers/generateKey.js
+npm run key
 ```
 
 Step 5: Set env variables
