@@ -66,7 +66,7 @@ exports.checkActivationStatus = async (req, res, next) => {
 
 // CHECK ACTIVATION STATUS OF USER
 exports.checkAdminStatus = async (req, res, next) => {
-    const isAdmin = req.user.ádmin;
+    const isAdmin = req.user.admin;
     // USER IS NOT ACTIVATED
     if (!isAdmin) {
         return res.status(401).json({
