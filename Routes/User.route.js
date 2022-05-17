@@ -5,7 +5,6 @@ const jwt = require('../helpers/jwt');
 const mail = require('../helpers/sendMail');
 const User = require('../database/Models/User.model');
 const middleware = require('../helpers/middleware');
-const status = require('../helpers/httpStatusCodes');
 const { messages, statusCodes } = require('../helpers/constants');
 
 // CREATE NEW USER
