@@ -1,13 +1,14 @@
 const jwt = require('../helpers/jwt');
 const User = require('../database/Models/User.model');
 const status = require('./httpStatusCodes');
+const constants = require('./constants');
 
 // VERIFIES JWT AND RETURNS USER IF VALID
 exports.verifyToken = async (req, res, next) => {
     var token = jwt.getTokenFromRequest(req.headers['authorization'], req.params.token);
     if (!token) {
         return res.status(status.BAD_REQUEST).json({
-            message: "No token provided"
+            message: constants.NO_TOKEN_PROVIDED
         });
     }
     try {
@@ -16,7 +17,7 @@ exports.verifyToken = async (req, res, next) => {
         // NO USER FOUND IN DATABASE
         if (!user) {
             return res.status(status.NOT_FOUND).json({
-                message: "User does not exist"
+                message: constants.NO_USER
             });
         }
         // USER FOUND IN DATABASE
@@ -25,7 +26,7 @@ exports.verifyToken = async (req, res, next) => {
     } catch(err) {
         // TOKEN IS INVALID
         return res.status(status.UNAUTHORIZED).json({
-            message: "Invalid token",
+            message: constants.INVALID_TOKEN,
             error: err
         });
     }
@@ -38,14 +39,14 @@ exports.getUser = async (req, res, next) => {
     // NO USER FOUND IN DATABASE
     if (!user) {
         return res.status(status.UNAUTHORIZED).json({
-            message: "Invalid credentials"
+            message: constants.INVALID_CREDENTIALS
         });
     }
     const isPasswordValid = user.isPasswordValid(password, user.password);
     // IF PASSWORD IS INVALID
     if (!isPasswordValid) {
         return res.status(status.UNAUTHORIZED).json({
-            message: "Invalid credentials"
+            message: constants.INVALID_CREDENTIALS
         });
     }
     req.user = user;
@@ -58,7 +59,7 @@ exports.checkActivationStatus = async (req, res, next) => {
     // USER IS NOT ACTIVATED
     if (!userIsActivated) {
         return res.status(status.UNAUTHORIZED).json({
-            message: "Your account is not activated. Please check your email's for the activation link."
+            message: constants.USER_NOT_ACTIVATED
         });
     }
     next();
@@ -70,7 +71,7 @@ exports.checkAdminStatus = async (req, res, next) => {
     // USER IS NOT ACTIVATED
     if (!isAdmin) {
         return res.status(status.FORBIDDEN).json({
-            message: "Access denied. You need to be an admin to view this resource."
+            message: constants.ACCESS_DENIED
         });
     }
     next();

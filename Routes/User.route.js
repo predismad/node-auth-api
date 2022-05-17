@@ -6,6 +6,7 @@ const mail = require('../helpers/sendMail');
 const User = require('../database/Models/User.model');
 const middleware = require('../helpers/middleware');
 const status = require('../helpers/httpStatusCodes');
+const constants = require('../helpers/constants');
 
 // CREATE NEW USER
 router.post("/create", async (req, res) => {
@@ -17,14 +18,14 @@ router.post("/create", async (req, res) => {
     newUser.save(async (err, user) => {
         if (err) {
             return res.status(status.CONFLICT).json({
-                message: "E-Mail already exists",
+                message: constants.EMAIL_ALREADY_EXISTS,
                 error: err
             });
         }
         const activationToken = jwt.createActivationToken(user._id);
         await mail.sendAccountActivationMail(email, activationToken);
         return res.status(status.CREATED).json({
-            message: "User created successfully. Check your emails to activate your account."
+            message: constants.USER_CREATED
         });
     });
 });
@@ -37,12 +38,12 @@ router.get("/activate/:token", middleware.verifyToken, async (req, res) => {
     if (!userIsActivated) {
         await User.findByIdAndUpdate(user._id, { activated: true });
         return res.status(status.OK).json({
-            message: "Account activated successfully"
+            message: constants.USER_ACTIVATED
         });
     }
     // IF USER IS ALREADY ACTIVATED
     return res.status(status.OK).json({
-        message: "Account already activated"
+        message: constants.USER_ALREADY_ACTIVATED
     });
 });
 
@@ -55,12 +56,12 @@ router.post("/resend-activation-link", middleware.getUser, async (req, res) => {
         const activationToken = jwt.createActivationToken(user._id);
         mail.sendAccountActivationMail(user.email, activationToken);
         return res.status(status.OK).json({
-            message: "Account activation mail send successfully"
+            message: constants.ACTIVATION_MAIL_SEND
         });
     }
     // USER IS ALREADY ACTIVATED
     return res.status(status.OK).json({
-        message: "Account is already activated"
+        message: constants.USER_ALREADY_ACTIVATED
     });
 });
 
@@ -73,13 +74,13 @@ router.post("/login", middleware.getUser, middleware.checkActivationStatus, asyn
     User.findOneAndUpdate({ _id: user._id }, { lastLogin: Date.now() }, { new: true }, (err, user) => {
         if (err) {
             return res.status(status.INTERNAL_SERVER_ERROR).json({
-                message: "Login failed",
+                message: constants.LOGIN_FAILED,
                 error: err
             });
         }
          // RETURN TOKEN AND USER DATA
         return res.status(status.OK).json({
-            message: "User logged in successfully",
+            message: constants.LOGIN_SUCCESSFUL,
             token: token,
             user: {
                 email: user.email,
@@ -94,7 +95,7 @@ router.post("/login", middleware.getUser, middleware.checkActivationStatus, asyn
 // GET USER VIA TOKEN
 router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async (req, res) => {
     return res.status(status.OK).json({
-        message: "User found",
+        message: constants.USER_FOUND,
         user: {
             email: req.user.email,
             admin: req.user.admin,
@@ -107,7 +108,7 @@ router.get("/", middleware.verifyToken, middleware.checkActivationStatus, async 
 // EXAMPLE ROUTE FOR ADMINS ONLY
 router.get("/admin", middleware.verifyToken, middleware.checkActivationStatus, middleware.checkAdminStatus, async (req, res) => {
     return res.status(status.OK).json({
-        message: "You are an admin!"
+        message: constants.USER_IS_ADMIN
     });
 });
 
@@ -118,14 +119,14 @@ router.post("/forgot-password", async (req, res) => {
     // NO USER FOUND IN DATABASE
     if (!user) {
         return res.status(status.NOT_FOUND).json({
-            message: "No user found with this email"
+            message: constants.NO_USER
         });
     }
     // send password reset link to user
     const resetToken = jwt.createResetToken(user._id);
     mail.sendPasswordResetMail(email, resetToken);
     return res.status(status.OK).json({
-        message: "Send reset instructions to your email"
+        message: constants.RESET_MAIL_SEND
     });
 });
 
@@ -139,13 +140,13 @@ router.post("/reset-password/:token", middleware.verifyToken, async (req, res) =
     User.findOneAndUpdate({ _id: user._id }, { password: hashedPassword }, (err, user) => {
         if (err) {
             return res.status(status.INTERNAL_SERVER_ERROR).json({
-                message: "Password reset failed",
+                message: constants.RESET_FAILED,
                 error: err
             });
         }
         // SUCCESSFULLY RESET PASSWORD
         return res.status(status.OK).json({
-            message: "Password reset successfully"
+            message: constants.RESET_SUCCESSFUL
         });
     });
 });
@@ -156,7 +157,7 @@ router.delete("/", middleware.verifyToken, async (req, res) => {
     // DELETE USER OUT OF DATABASE
     await User.findByIdAndDelete(user._id);
     return res.status(status.OK).json({
-        message: "User deleted successfully"
+        message: constants.USER_DELETED
     });
 });
 
