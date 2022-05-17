@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('../helpers/jwt');
 const mail = require('../helpers/sendMail');
-const User = require('../database/models/user');
+const User = require('../database/Models/user');
 const middleware = require('../helpers/middleware');
 
 // CREATE NEW USER
