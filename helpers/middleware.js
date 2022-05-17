@@ -63,3 +63,15 @@ exports.checkActivationStatus = async (req, res, next) => {
     }
     next();
 };
+
+// CHECK ACTIVATION STATUS OF USER
+exports.checkAdminStatus = async (req, res, next) => {
+    const isAdmin = req.user.ádmin;
+    // USER IS NOT ACTIVATED
+    if (!isAdmin) {
+        return res.status(401).json({
+            message: "Access denied. You need to be an admin to view this resource."
+        });
+    }
+    next();
+};
