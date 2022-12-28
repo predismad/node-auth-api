@@ -1,28 +1,33 @@
 {
-  "name": "server",
+  "name": "node-auth-api",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "server": "node index.js",
-    "key": "node ./helpers/generateKey.js"
+    "start-dev": "npm run mongo && npm run dev",
+    "start": "node index.js",
+    "start-prod": "npm run mongo && npm run start",
+    "key": "node ./helpers/generateKey.js",
+    "mongo": "cd ./docker && docker-compose up -d"
   },
-  "author": "predismad",
+  "author": "mgrzybowski",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^2.0.16"
+    "nodemon": "^2.0.20"
   },
   "dependencies": {
-    "bcrypt": "^5.0.1",
-    "body-parser": "^1.20.0",
+    "axios": "^1.2.1",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.1",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^16.0.1",
-    "express": "^4.18.1",
-    "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.3.3",
-    "nodemailer": "^6.7.5",
-    "nodemailer-sendgrid-transport": "^0.2.0"
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^6.8.1",
+    "morgan": "^1.10.0",
+    "npmlog": "^7.0.1",
+    "rotating-file-stream": "^3.0.4"
   }
 }

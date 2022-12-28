@@ -1,5 +1,5 @@
-// RUN "node ./helpers/generateKey.js" or "npm run key" IN ROOT DIRECTORY TO GENERATE KEY
-const crypto = require('crypto')
+const crypto = require("node:crypto");
 
-const key = crypto.randomBytes(32).toString('hex')
-console.table({ key })
+const KEY_LENGTH = 64;
+const key = crypto.randomBytes(KEY_LENGTH).toString('hex');
+console.table({ key });
